@@ -1,0 +1,7 @@
+## Title: Lootomatic
+## Description: Provides useful functionality for looting
+## APIVersion: 100003
+## SavedVariables: Lootomatic_Data
+
+Lootomatic.lua
+Lootomatic.xml
