@@ -1,6 +1,15 @@
 Loot-o-matic addon for Elder Scrolls Online
 ===========================================
 
+Loot-o-matic is an addon for Elder Scrolls online that helps you manage the
+loot that you obtain throughout your journey.
+
+# Features
+
+- Auto mark Trash items as junk
+- Auto sell junk items when vendoring
+- Filters that allow you to mark items as junk
+
 # Manual Install
 
 
