@@ -12,6 +12,9 @@ loot that you obtain throughout your journey.
 
 # Manual Install
 
+# Contribute
+
+https://github.com/JoshuaEstes/eso-lootomatic
 
 # License
 
