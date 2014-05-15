@@ -16,6 +16,10 @@ lootomatic.defaults = {}
 --]]
 LootItem = {}
 LootItem.__index = LootItem
+
+--[[
+-- @param string itemName
+--]]
 function LootItem.New(itemName)
     local self = setmetatable({}, LootItem)
     self.name,  self.color,
@@ -32,6 +36,18 @@ function LootItem.New(itemName)
     self.n23, self.n24 = ZO_LinkHandler_ParseLink(itemName)
     self.icon, self.sellPrice, self.meetsUsageRequirement, self.equipType, self.itemStyle = GetItemLinkInfo(itemName)
     return self
+end
+
+--[[
+-- Loads an item based on where it is based on the slot in a bag
+--
+-- @param integer bagId
+-- @param integer slotId
+--]]
+function LootItem.LoadByBagAndSlot(bagId, slotId)
+    local i = LootItem.New(GetItemLink(bagId, slotId, LINK_STYLE_DEFAULT))
+    i.itemType = GetItemType(bagId, slotId)
+    return i
 end
 
 --[[
@@ -65,7 +81,7 @@ function lootomatic.onLootReceived(eventCode, lootedBy, itemName, quantity, item
     d('onLootReceived')
     if (not isSelf) then return end
     local i = LootItem.New(itemName)
-    d(i)
+    --d(i)
     --[[
 	local icon, sellPrice, meetsUsageRequirement, equipType, itemStyle = GetItemLinkInfo(itemName)
     d('itemName: ' .. i.GetName())
@@ -108,6 +124,13 @@ end
 --]]
 function lootomatic.onInventorySingleSlotUpdate(eventCode, bagId, slotId, isNewItem, itemSoundCategory, updateReason)
     d('onInventorySingleSlotUpdate')
+    if (not isNewItem) then
+        return
+    end
+    local i = LootItem.LoadByBagAndSlot(bagId, slotId)
+    if i.itemType == ITEMTYPE_TRASH then
+        SetItemIsJunk(bagId, slotId, true)
+    end
 end
 
 --[[
