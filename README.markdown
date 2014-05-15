@@ -16,6 +16,15 @@ loot that you obtain throughout your journey.
 
 https://github.com/JoshuaEstes/eso-lootomatic
 
+# Packaging
+
+To package this addon for distribution the following command needs to be ran:
+
+    git archive --format=zip --prefix=Lootomatic/ HEAD > Lootomatic.zip
+
+This will create a new zip file in the current directory ready to be uploaded
+to an addon site.
+
 # License
 
 Copyright (C) 2014 Joshua Estes <Joshua@Estes.in>
