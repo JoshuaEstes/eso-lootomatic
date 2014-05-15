@@ -7,10 +7,39 @@ loot that you obtain throughout your journey.
 # Features
 
 - Auto mark Trash items as junk
-- Auto sell junk items when vendoring
+- Auto sell junk items when opening a vendor store
 - Filters that allow you to mark items as junk
 
 # Manual Install
+
+@TODO
+
+# Usage
+
+@TODO
+
+# Support
+
+If you are having trouble with this addon, please submit a support request
+on the ESOUI website.
+
+* http://www.esoui.com/portal.php?id=114&a=listbugs
+
+# Feature Requests
+
+If you are wanting to have a feature adding to this addon, please submit
+the feature request on the ESOUI website.
+
+* http://www.esoui.com/portal.php?id=114&a=listfeatures
+
+# Development
+
+This addon follows Semantic Versioning and it also follows the gitflow
+work flow of development. If either of those sound new to you, please read
+the following articles:
+
+* http://semver.org
+* http://nvie.com/posts/a-successful-git-branching-model
 
 # Contribute
 
