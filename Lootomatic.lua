@@ -6,15 +6,24 @@
 -- want to keep and what you want to mark as junk to sell
 -- at your friendly vendor.
 --
+-- Log Levels:
+--     100 - Debug
+--     200 - Info
+--     300 - Warn
+--
 --]]
 local lootomatic = {}
 LootomaticCommands = {} -- Container for slash commands
+LootomaticLogger = {
+    levels = { [100] = 'DEBUG', [200] = 'INFO', [300] = 'WARN' }
+}
 lootomatic.name = 'Lootomatic'
 -- Used for keeping track of current filters
 lootomatic.filters = {
     filterType = true
 }
 lootomatic.defaults = {
+    logLevel    = 100,
     debug       = true,
     sellAllJunk = true,
     filters     = lootomatic.filters
@@ -66,12 +75,30 @@ end
 -- @param integer level
 --]]
 function lootomatic.log(text, level)
-    if lootomatic.data.debug then
-        d('[Lootomatic] Debug: ' .. text)
+    local defaultLogLevel = lootomatic.data.logLevel
+    -- if logLevel not set, set to default
+    if nil = level then
+        level = defaultLogLevel
+    end
+    -- disabled logger
+    if 0 == level then
         return
     end
-
-    d('[Lootomatic]: ' .. text)
+    -- Print DEBUG messages
+    if 100 >= level then
+        d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
+        return
+    end
+    -- Print INFO messages
+    if 200 >= level then
+        d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
+        return
+    end
+    -- Print WARN messages
+    if 300 >= level then
+        d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
+        return
+    end
 end
 
 --[[
