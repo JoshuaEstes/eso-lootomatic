@@ -98,8 +98,8 @@ function Lootomatic.Log(text, level)
     if 0 == level then
         return
     end
-    -- Print DEBUG messages
-    if 100 >= level then
+    -- Print WARN messages
+    if 300 >= level then
         d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
         return
     end
@@ -108,8 +108,8 @@ function Lootomatic.Log(text, level)
         d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
         return
     end
-    -- Print WARN messages
-    if 300 >= level then
+    -- Print DEBUG messages
+    if 100 >= level then
         d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
         return
     end
@@ -252,16 +252,33 @@ function LootomaticCommands.Filters(cmd)
         return
     end
 
+    if string.match(cmd, '^add .*') then
+        local filter = {}
+        local itemType = string.match(cmd, 'itemtype:(.*)')
+        if nil ~= itemType then
+            filter['itemType'] = itemType
+        end
+        table.insert(Lootomatic.db.filters, filter)
+        Lootomatic.Log('Added new filter', LootomaticLogger.INFO)
+        return
+    end
+
+    if string.match(cmd, '^show .*') then
+        local i = string.match(cmd, '^show (%d+)')
+        local filter = Lootomatic.db.filters[tonumber(i)]
+        for i,v in pairs(filter) do
+            Lootomatic.Log(i .. ': ' .. v, LootomaticLogger.INFO)
+        end
+        return
+    end
+
     LootomaticCommands.Help()
 end
 
 function LootomaticCommands.FiltersList()
-    d(Lootomatic.db.filters)
     ----[[
     for i,v in pairs(Lootomatic.db.filters) do
-        Lootomatic.Log('----------', LootomaticLogger.DEBUG)
         Lootomatic.Log('[' .. i .. ']', LootomaticLogger.INFO)
-        Lootomatic.Log('----------', LootomaticLogger.DEBUG)
     end
     --]]
 end

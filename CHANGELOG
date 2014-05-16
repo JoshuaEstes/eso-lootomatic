@@ -1,0 +1,8 @@
+0.2.0
+	- Added the ability to add filters based on itemType 
+	- Added the ability to list filters
+	- Added the ability to show details on filters
+	- Added a simple logger
+
+0.1.0
+	- Initial release with mostly debug output, not much functionality
