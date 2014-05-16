@@ -15,6 +15,9 @@
 local lootomatic = {}
 LootomaticCommands = {} -- Container for slash commands
 LootomaticLogger = {
+    DEBUG = 100,
+    INFO  = 200,
+    WARN  = 300,
     levels = { [100] = 'DEBUG', [200] = 'INFO', [300] = 'WARN' }
 }
 lootomatic.name = 'Lootomatic'
@@ -107,7 +110,7 @@ end
 -- @param integer eventCode
 --]]
 function lootomatic.onLootClosed(eventCode)
-    lootomatic.log('onLootClosed')
+    lootomatic.log('onLootClosed', LootomaticLogger.DEBUG)
 end
 
 --[[
@@ -116,9 +119,9 @@ end
 -- @param string  itemName
 --]]
 function lootomatic.onLootItemFailed(eventCode, reason, itemName)
-    lootomatic.log('onLootItemFailed')
-    lootomatic.log('reason: ' .. reason)
-    lootomatic.log('itemName' .. itemName)
+    lootomatic.log('onLootItemFailed', LootomaticLogger.DEBUG)
+    lootomatic.log('reason: ' .. reason, LootomaticLogger.DEBUG)
+    lootomatic.log('itemName' .. itemName, LootomaticLogger.DEBUG)
 end
 
 --[[
@@ -134,34 +137,34 @@ end
 --]]
 function lootomatic.onLootReceived(eventCode, lootedBy, itemName, quantity, itemSound, lootType, isSelf)
     if (not isSelf) then return end
-    lootomatic.log('onLootReceived')
+    lootomatic.log('onLootReceived', LootomaticLogger.DEBUG)
     local i = LootItem.New(itemName)
-    lootomatic.log('Obtained Item: ' .. i.name)
+    lootomatic.log('Obtained Item: ' .. i.name, LootomaticLogger.DEBUG)
 end
 
 --[[
 -- @param integer eventCode
 --]]
 function lootomatic.onLootUpdated(eventCode)
-    lootomatic.log('onLootUpdated')
+    lootomatic.log('onLootUpdated', LootomaticLogger.DEBUG)
 end
 
 --[[
 -- @param integer eventCode
 --]]
 function lootomatic.onCloseStore(eventCode)
-    lootomatic.log('onCloseStore')
+    lootomatic.log('onCloseStore', LootomaticLogger.DEBUG)
 end
 
 --[[
 -- @param integer eventCode
 --]]
 function lootomatic.onOpenStore(eventCode)
-    lootomatic.log('onOpenStore')
+    lootomatic.log('onOpenStore', LootomaticLogger.DEBUG)
     if lootomatic.data.sellAllJunk then
-        lootomatic.log('Auto selling junk enabled')
+        lootomatic.log('Auto selling junk enabled', LootomaticLogger.DEBUG)
         SellAllJunk()
-        lootomatic.log('All junk items sold')
+        lootomatic.log('All junk items sold', LootomaticLogger.DEBUG)
     end
 end
 
@@ -175,14 +178,14 @@ end
 --]]
 function lootomatic.onInventorySingleSlotUpdate(eventCode, bagId, slotId, isNewItem, itemSoundCategory, updateReason)
     if (not isNewItem) then return end
-    lootomatic.log('onInventorySingleSlotUpdate')
+    lootomatic.log('onInventorySingleSlotUpdate', LootomaticLogger.DEBUG)
     local i = LootItem.LoadByBagAndSlot(bagId, slotId)
     --[[
     -- Check filters and mark item as junk if it matches
     -- a filter
     --]]
     if i.itemType == ITEMTYPE_TRASH then
-        lootomatic.log('Obtained Item is Trash, marking as Junk')
+        lootomatic.log('Obtained Item is Trash, marking as Junk', LootomaticLogger.DEBUG)
         SetItemIsJunk(bagId, slotId, true)
     end
 end
@@ -191,8 +194,8 @@ end
 --
 --]]
 function LootomaticCommands.Help()
-    lootomatic.log('debug [true OR false]')
-    lootomatic.log('filters [list OR add OR delete]')
+    lootomatic.log('debug [true OR false]', LootomaticLogger.DEBUG)
+    lootomatic.log('filters [list OR add OR delete]', LootomaticLogger.DEBUG)
 end
 
 --[[
@@ -210,7 +213,7 @@ function LootomaticCommands.Debug(toggle)
         LootomaticCommands.Help()
         return
     end
-    lootomatic.log('Updated setting')
+    lootomatic.log('Updated setting', LootomaticLogger.DEBUG)
 end
 
 --[[
