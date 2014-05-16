@@ -20,10 +20,10 @@ Lootomatic.defaults = {
 }
 
 -- Container for slash commands
-Lootomatic.Commands = {}
+LootomaticCommands = {}
 
 -- Used for logging output to console
-Lootomatic.Logger = {
+LootomaticLogger = {
     DEBUG = 100,
     INFO  = 200,
     WARN  = 300,
@@ -268,7 +268,7 @@ end
 -- @param string  addOnName
 --]]
 function Lootomatic.OnAddOnLoaded(eventCode, addOnName)
-    if (addOnName ~= lootomatic.name) then
+    if (addOnName ~= Lootomatic.name) then
         return
     end
     Lootomatic.db = ZO_SavedVars:New('Lootomatic_Data', 1, nil, Lootomatic.defaults)
