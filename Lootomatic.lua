@@ -8,8 +8,17 @@
 --
 --]]
 local lootomatic = {}
+LootomaticCommands = {} -- Container for slash commands
 lootomatic.name = 'Lootomatic'
-lootomatic.defaults = {}
+-- Used for keeping track of current filters
+lootomatic.filters = {
+    filterType = true
+}
+lootomatic.defaults = {
+    debug       = true,
+    sellAllJunk = true,
+    filters     = lootomatic.filters
+}
 
 --[[
 -- eso Item class, helps to get information about an item
@@ -51,10 +60,27 @@ function LootItem.LoadByBagAndSlot(bagId, slotId)
 end
 
 --[[
+-- Displays text in the chat window
+--
+-- @param string  text
+-- @param integer level
+--]]
+function lootomatic.log(text, level)
+    if lootomatic.data.debug then
+        d('[Lootomatic] Debug: ' .. text)
+        return
+    end
+
+    d('[Lootomatic]: ' .. text)
+end
+
+--[[
+-- Event trigger when loot window is closed
+--
 -- @param integer eventCode
 --]]
 function lootomatic.onLootClosed(eventCode)
-    d('onLootClosed')
+    lootomatic.log('onLootClosed')
 end
 
 --[[
@@ -63,12 +89,14 @@ end
 -- @param string  itemName
 --]]
 function lootomatic.onLootItemFailed(eventCode, reason, itemName)
-    d('onLootItemFailed')
-    d('reason: ' .. reason)
-    d('itemName' .. itemName)
+    lootomatic.log('onLootItemFailed')
+    lootomatic.log('reason: ' .. reason)
+    lootomatic.log('itemName' .. itemName)
 end
 
 --[[
+-- Event that is triggered for every loot item received
+--
 -- @param integer eventCode
 -- @param string  lootedBy
 -- @param string  itemName
@@ -78,40 +106,36 @@ end
 -- @param boolean isSelf
 --]]
 function lootomatic.onLootReceived(eventCode, lootedBy, itemName, quantity, itemSound, lootType, isSelf)
-    d('onLootReceived')
     if (not isSelf) then return end
+    lootomatic.log('onLootReceived')
     local i = LootItem.New(itemName)
-    --d(i)
-    --[[
-	local icon, sellPrice, meetsUsageRequirement, equipType, itemStyle = GetItemLinkInfo(itemName)
-    d('itemName: ' .. i.GetName())
-    d('lootedBy: ' .. lootedBy)
-    d('quantity: ' .. quantity)
-    d('itemSound: ' .. itemSound)
-    d('lootType: ' .. lootType)
-    --]]
+    lootomatic.log('Obtained Item: ' .. i.name)
 end
 
 --[[
 -- @param integer eventCode
 --]]
 function lootomatic.onLootUpdated(eventCode)
-    d('onLootUpdated')
+    lootomatic.log('onLootUpdated')
 end
 
 --[[
 -- @param integer eventCode
 --]]
 function lootomatic.onCloseStore(eventCode)
-    d('onCloseStore')
+    lootomatic.log('onCloseStore')
 end
 
 --[[
 -- @param integer eventCode
 --]]
 function lootomatic.onOpenStore(eventCode)
-    d('onOpenStore')
-    SellAllJunk()
+    lootomatic.log('onOpenStore')
+    if lootomatic.data.sellAllJunk then
+        lootomatic.log('Auto selling junk enabled')
+        SellAllJunk()
+        lootomatic.log('All junk items sold')
+    end
 end
 
 --[[
@@ -123,13 +147,91 @@ end
 -- @param integer updateReason
 --]]
 function lootomatic.onInventorySingleSlotUpdate(eventCode, bagId, slotId, isNewItem, itemSoundCategory, updateReason)
-    d('onInventorySingleSlotUpdate')
-    if (not isNewItem) then
+    if (not isNewItem) then return end
+    lootomatic.log('onInventorySingleSlotUpdate')
+    local i = LootItem.LoadByBagAndSlot(bagId, slotId)
+    --[[
+    -- Check filters and mark item as junk if it matches
+    -- a filter
+    --]]
+    if i.itemType == ITEMTYPE_TRASH then
+        lootomatic.log('Obtained Item is Trash, marking as Junk')
+        SetItemIsJunk(bagId, slotId, true)
+    end
+end
+
+--[[
+--
+--]]
+function LootomaticCommands.Help()
+    lootomatic.log('debug [true OR false]')
+    lootomatic.log('filters [list OR add OR delete]')
+end
+
+--[[
+--]]
+function LootomaticCommands.Debug(toggle)
+    if nil == toggle then
+        LootomaticCommands.Help()
         return
     end
-    local i = LootItem.LoadByBagAndSlot(bagId, slotId)
-    if i.itemType == ITEMTYPE_TRASH then
-        SetItemIsJunk(bagId, slotId, true)
+    if 'true' == toggle then
+        lootomatic.data.debug = true
+    elseif 'false' == toggle then
+        lootomatic.data.debug = false
+    else
+        LootomaticCommands.Help()
+        return
+    end
+    lootomatic.log('Updated setting')
+end
+
+--[[
+--]]
+function LootomaticCommands.Filters(cmd)
+    if nil == cmd then
+        LootomaticCommands.Help()
+        return
+    end
+
+    if 'list' == cmd then
+        LootomaticCommands.FiltersList()
+        return
+    end
+end
+
+function LootomaticCommands.FiltersList()
+    d(lootomatic.data.filters)
+    --[[
+    for i,v in pairs(lootomatic.data.filters) do
+        d(i)
+        d(v)
+    end
+    --]]
+end
+
+--[[
+-- Used for parsing slash commands
+--]]
+function lootomatic.Command(parameters)
+    local options = {}
+    local searchResult = { string.match(parameters,"^(%S*)%s*(.-)$") }
+    for i,v in pairs(searchResult) do
+        if (v ~= nil and v ~= "") then
+            options[i] = string.lower(v)
+        end
+    end
+    if #options == 0 or options[1] == "help" then
+        LootomaticCommands.Help()
+        return
+    end
+
+    if options[1] == 'debug' then
+        LootomaticCommands.Debug(options[2])
+    end
+
+    if options[1] == 'filters' then
+        LootomaticCommands.Filters(options[2])
     end
 end
 
@@ -155,6 +257,9 @@ function lootomatic.onAddOnLoaded(eventCode, addOnName)
 
     -- Inventory Events
     EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_INVENTORY_SINGLE_SLOT_UPDATE, lootomatic.onInventorySingleSlotUpdate)
+
+    -- Initialize slash command
+    SLASH_COMMANDS['/lootomatic'] = lootomatic.Command
 end
 
 EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_ADD_ON_LOADED, lootomatic.onAddOnLoaded)
