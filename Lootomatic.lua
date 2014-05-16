@@ -68,6 +68,19 @@ function LootItem.LoadByBagAndSlot(bagId, slotId)
     i.itemType = GetItemType(bagId, slotId)
     return i
 end
+LootFilter = {}
+LootFilter.__index = LootFilter
+function LootFilter.New(defaults)
+    local self = setmetatable(defaults, LootFilter)
+    return self
+end
+function LootFilter:IsMatch(lootItem)
+    if self.itemType == lootItem.itemType then
+        return true
+    end
+
+    return false
+end
 
 --[[
 -- Displays text in the chat window
@@ -182,6 +195,10 @@ function Lootomatic.OnInventorySingleSlotUpdate(eventCode, bagId, slotId, isNewI
     -- Check filters and mark item as junk if it matches
     -- a filter
     --]]
+    for i,v in pairs(Lootomatic.db.filters) do
+        d(i)
+        d(v)
+    end
     if i.itemType == ITEMTYPE_TRASH then
         Lootomatic.Log('Obtained Item is Trash, marking as Junk', LootomaticLogger.INFO)
         SetItemIsJunk(bagId, slotId, true)
@@ -226,14 +243,25 @@ function LootomaticCommands.Filters(cmd)
         LootomaticCommands.FiltersList()
         return
     end
+
+    if 'clear' == cmd then
+        Lootomatic.db.filters = {}
+        local f = LootFilter.New({itemType = ITEMTYPE_TRASH})
+        table.insert(Lootomatic.db.filters, f)
+        Lootomatic.Log('Filters have been cleared', LootomaticLogger.INFO)
+        return
+    end
+
+    LootomaticCommands.Help()
 end
 
 function LootomaticCommands.FiltersList()
-    d(lootomatic.db.filters)
-    --[[
+    d(Lootomatic.db.filters)
+    ----[[
     for i,v in pairs(Lootomatic.db.filters) do
-        d(i)
-        d(v)
+        Lootomatic.Log('----------', LootomaticLogger.DEBUG)
+        Lootomatic.Log('[' .. i .. ']', LootomaticLogger.INFO)
+        Lootomatic.Log('----------', LootomaticLogger.DEBUG)
     end
     --]]
 end

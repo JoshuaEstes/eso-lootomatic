@@ -16,7 +16,41 @@ loot that you obtain throughout your journey.
 
 # Usage
 
-@TODO
+Currently this script is console based and can only be used in a chat window.
+
+Commands:
+
+    /lootomatic filters list
+    /lootomatic filters show <index>
+    /lootomatic filters clear
+    /lootomatic filters add <filters>
+    /lootomatic filters update <index> <filters>
+    /lootomatic filters delete <index>
+
+## filters list
+
+This command will list all of your current loot filters
+
+## filters show
+
+Shows more detail about a filter
+
+## filters clear
+
+Clear all loot filters
+
+## filters add
+
+Add a new loot filter
+
+## filters update
+
+Replaces filters
+
+## filters delete
+
+Deletes on of the loot filters, you can see the index by running
+the `filters list` command
 
 # Support
 
