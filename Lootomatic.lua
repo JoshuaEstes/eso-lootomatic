@@ -6,30 +6,28 @@
 -- want to keep and what you want to mark as junk to sell
 -- at your friendly vendor.
 --
--- Log Levels:
---     100 - Debug
---     200 - Info
---     300 - Warn
---
 --]]
-local lootomatic = {}
-LootomaticCommands = {} -- Container for slash commands
-LootomaticLogger = {
+local Lootomatic   = {}
+Lootomatic.name    = 'Lootomatic'
+Lootomatic.version = 1
+
+-- Defaults
+Lootomatic.defaults = {
+    logLevel    = 100,
+    debug       = true,
+    sellAllJunk = true,
+    filters     = {}
+}
+
+-- Container for slash commands
+Lootomatic.Commands = {}
+
+-- Used for logging output to console
+Lootomatic.Logger = {
     DEBUG = 100,
     INFO  = 200,
     WARN  = 300,
     levels = { [100] = 'DEBUG', [200] = 'INFO', [300] = 'WARN' }
-}
-lootomatic.name = 'Lootomatic'
--- Used for keeping track of current filters
-lootomatic.filters = {
-    { displayName = 'Trash', itemType='ITEMTYPE_TRASH' }
-}
-lootomatic.defaults = {
-    logLevel    = 100,
-    debug       = true,
-    sellAllJunk = true,
-    filters     = lootomatic.filters
 }
 
 --[[
@@ -77,8 +75,8 @@ end
 -- @param string  text
 -- @param integer level
 --]]
-function lootomatic.log(text, level)
-    local defaultLogLevel = lootomatic.data.logLevel
+function Lootomatic.Log(text, level)
+    local defaultLogLevel = Lootomatic.db.logLevel
     -- if logLevel not set, set to default
     if nil ~= level then
         level = defaultLogLevel
@@ -109,8 +107,8 @@ end
 --
 -- @param integer eventCode
 --]]
-function lootomatic.onLootClosed(eventCode)
-    lootomatic.log('onLootClosed', LootomaticLogger.DEBUG)
+function Lootomatic.OnLootClosed(eventCode)
+    Lootomatic.Log('onLootClosed', LootomaticLogger.DEBUG)
 end
 
 --[[
@@ -118,10 +116,10 @@ end
 -- @param integer reason
 -- @param string  itemName
 --]]
-function lootomatic.onLootItemFailed(eventCode, reason, itemName)
-    lootomatic.log('onLootItemFailed', LootomaticLogger.DEBUG)
-    lootomatic.log('reason: ' .. reason, LootomaticLogger.DEBUG)
-    lootomatic.log('itemName' .. itemName, LootomaticLogger.DEBUG)
+function Lootomatic.OnLootItemFailed(eventCode, reason, itemName)
+    Lootomatic.Log('onLootItemFailed', LootomaticLogger.DEBUG)
+    Lootomatic.Log('reason: ' .. reason, LootomaticLogger.DEBUG)
+    Lootomatic.Log('itemName' .. itemName, LootomaticLogger.DEBUG)
 end
 
 --[[
@@ -135,36 +133,36 @@ end
 -- @param integer lootType
 -- @param boolean isSelf
 --]]
-function lootomatic.onLootReceived(eventCode, lootedBy, itemName, quantity, itemSound, lootType, isSelf)
+function Lootomatic.OnLootReceived(eventCode, lootedBy, itemName, quantity, itemSound, lootType, isSelf)
     if (not isSelf) then return end
-    lootomatic.log('onLootReceived', LootomaticLogger.DEBUG)
+    Lootomatic.Log('onLootReceived', LootomaticLogger.DEBUG)
     local i = LootItem.New(itemName)
-    lootomatic.log('Obtained Item: ' .. i.name, LootomaticLogger.DEBUG)
+    Lootomatic.Log('Obtained Item: ' .. i.name, LootomaticLogger.DEBUG)
 end
 
 --[[
 -- @param integer eventCode
 --]]
-function lootomatic.onLootUpdated(eventCode)
-    lootomatic.log('onLootUpdated', LootomaticLogger.DEBUG)
+function Lootomatic.OnLootUpdated(eventCode)
+    Lootomatic.Log('onLootUpdated', LootomaticLogger.DEBUG)
 end
 
 --[[
 -- @param integer eventCode
 --]]
-function lootomatic.onCloseStore(eventCode)
-    lootomatic.log('onCloseStore', LootomaticLogger.DEBUG)
+function Lootomatic.OnCloseStore(eventCode)
+    Lootomatic.Log('onCloseStore', LootomaticLogger.DEBUG)
 end
 
 --[[
 -- @param integer eventCode
 --]]
-function lootomatic.onOpenStore(eventCode)
-    lootomatic.log('onOpenStore', LootomaticLogger.DEBUG)
-    if lootomatic.data.sellAllJunk then
-        lootomatic.log('Auto selling junk enabled', LootomaticLogger.DEBUG)
+function Lootomatic.OnOpenStore(eventCode)
+    Lootomatic.Log('onOpenStore', LootomaticLogger.DEBUG)
+    if Lootomatic.db.sellAllJunk then
+        Lootomatic.Log('Auto selling junk enabled', LootomaticLogger.DEBUG)
         SellAllJunk()
-        lootomatic.log('All junk items sold', LootomaticLogger.DEBUG)
+        Lootomatic.Log('All junk items sold', LootomaticLogger.DEBUG)
     end
 end
 
@@ -176,16 +174,16 @@ end
 -- @param integer itemSoundCategory
 -- @param integer updateReason
 --]]
-function lootomatic.onInventorySingleSlotUpdate(eventCode, bagId, slotId, isNewItem, itemSoundCategory, updateReason)
+function Lootomatic.OnInventorySingleSlotUpdate(eventCode, bagId, slotId, isNewItem, itemSoundCategory, updateReason)
     if (not isNewItem) then return end
-    lootomatic.log('onInventorySingleSlotUpdate', LootomaticLogger.DEBUG)
+    Lootomatic.Log('onInventorySingleSlotUpdate', LootomaticLogger.DEBUG)
     local i = LootItem.LoadByBagAndSlot(bagId, slotId)
     --[[
     -- Check filters and mark item as junk if it matches
     -- a filter
     --]]
     if i.itemType == ITEMTYPE_TRASH then
-        lootomatic.log('Obtained Item is Trash, marking as Junk', LootomaticLogger.DEBUG)
+        Lootomatic.Log('Obtained Item is Trash, marking as Junk', LootomaticLogger.INFO)
         SetItemIsJunk(bagId, slotId, true)
     end
 end
@@ -194,8 +192,8 @@ end
 --
 --]]
 function LootomaticCommands.Help()
-    lootomatic.log('debug [true OR false]', LootomaticLogger.DEBUG)
-    lootomatic.log('filters [list OR add OR delete]', LootomaticLogger.DEBUG)
+    Lootomatic.Log('debug [true OR false]', LootomaticLogger.INFO)
+    Lootomatic.Log('filters [list OR add OR delete]', LootomaticLogger.INFO)
 end
 
 --[[
@@ -206,14 +204,14 @@ function LootomaticCommands.Debug(toggle)
         return
     end
     if 'true' == toggle then
-        lootomatic.data.debug = true
+        Lootomatic.db.debug = true
     elseif 'false' == toggle then
-        lootomatic.data.debug = false
+        lootomatic.db.debug = false
     else
         LootomaticCommands.Help()
         return
     end
-    lootomatic.log('Updated setting', LootomaticLogger.DEBUG)
+    Lootomatic.Log('Updated setting', LootomaticLogger.DEBUG)
 end
 
 --[[
@@ -231,9 +229,9 @@ function LootomaticCommands.Filters(cmd)
 end
 
 function LootomaticCommands.FiltersList()
-    d(lootomatic.data.filters)
+    d(lootomatic.db.filters)
     --[[
-    for i,v in pairs(lootomatic.data.filters) do
+    for i,v in pairs(Lootomatic.db.filters) do
         d(i)
         d(v)
     end
@@ -243,7 +241,7 @@ end
 --[[
 -- Used for parsing slash commands
 --]]
-function lootomatic.Command(parameters)
+function Lootomatic.Command(parameters)
     local options = {}
     local searchResult = { string.match(parameters,"^(%S*)%s*(.-)$") }
     for i,v in pairs(searchResult) do
@@ -269,27 +267,27 @@ end
 -- @param integer eventCode
 -- @param string  addOnName
 --]]
-function lootomatic.onAddOnLoaded(eventCode, addOnName)
+function Lootomatic.OnAddOnLoaded(eventCode, addOnName)
     if (addOnName ~= lootomatic.name) then
         return
     end
-    lootomatic.data = ZO_SavedVars:New('Lootomatic_Data', 1, nil, lootomatic.defaults)
+    Lootomatic.db = ZO_SavedVars:New('Lootomatic_Data', 1, nil, Lootomatic.defaults)
 
     -- Loot events
-    EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_LOOT_CLOSED, lootomatic.onLootClosed)
-    EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_LOOT_ITEM_FAILED, lootomatic.onLootItemFailed)
-    EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_LOOT_RECEIVED, lootomatic.onLootReceived)
-    EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_LOOT_UPDATED, lootomatic.onLootUpdated)
+    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_LOOT_CLOSED, Lootomatic.OnLootClosed)
+    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_LOOT_ITEM_FAILED, Lootomatic.OnLootItemFailed)
+    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_LOOT_RECEIVED, Lootomatic.OnLootReceived)
+    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_LOOT_UPDATED, Lootomatic.OnLootUpdated)
 
     -- Vendor events
-    EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_CLOSE_STORE, lootomatic.onCloseStore)
-    EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_OPEN_STORE, lootomatic.onOpenStore)
+    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_CLOSE_STORE, Lootomatic.OnCloseStore)
+    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_OPEN_STORE, Lootomatic.OnOpenStore)
 
     -- Inventory Events
-    EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_INVENTORY_SINGLE_SLOT_UPDATE, lootomatic.onInventorySingleSlotUpdate)
+    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_INVENTORY_SINGLE_SLOT_UPDATE, Lootomatic.OnInventorySingleSlotUpdate)
 
     -- Initialize slash command
-    SLASH_COMMANDS['/lootomatic'] = lootomatic.Command
+    SLASH_COMMANDS['/lootomatic'] = Lootomatic.Command
 end
 
-EVENT_MANAGER:RegisterForEvent(lootomatic.name, EVENT_ADD_ON_LOADED, lootomatic.onAddOnLoaded)
+EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_ADD_ON_LOADED, Lootomatic.OnAddOnLoaded)
