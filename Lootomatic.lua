@@ -20,7 +20,7 @@ LootomaticLogger = {
 lootomatic.name = 'Lootomatic'
 -- Used for keeping track of current filters
 lootomatic.filters = {
-    filterType = true
+    { displayName = 'Trash', itemType='ITEMTYPE_TRASH' }
 }
 lootomatic.defaults = {
     logLevel    = 100,
@@ -77,7 +77,7 @@ end
 function lootomatic.log(text, level)
     local defaultLogLevel = lootomatic.data.logLevel
     -- if logLevel not set, set to default
-    if nil = level then
+    if nil ~= level then
         level = defaultLogLevel
     end
     -- disabled logger
