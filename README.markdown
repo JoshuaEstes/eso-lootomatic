@@ -52,6 +52,14 @@ Replaces filters
 Deletes on of the loot filters, you can see the index by running
 the `filters list` command
 
+## Examples
+
+@TODO
+
+## Filter Types
+
+@TODO
+
 # Support
 
 If you are having trouble with this addon, please submit a support request
