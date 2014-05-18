@@ -150,7 +150,9 @@ function Lootomatic.OnLootReceived(eventCode, lootedBy, itemName, quantity, item
     if (not isSelf) then return end
     Lootomatic.Log('onLootReceived', LootomaticLogger.DEBUG)
     local i = LootItem.New(itemName)
-    Lootomatic.Log('Obtained Item: ' .. i.name, LootomaticLogger.DEBUG)
+    if i.name then
+        Lootomatic.Log('Obtained Item: ' .. i.name, LootomaticLogger.DEBUG)
+    end
 end
 
 --[[
