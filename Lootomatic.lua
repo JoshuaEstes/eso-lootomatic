@@ -13,10 +13,11 @@ Lootomatic.version = 1
 
 -- Defaults
 Lootomatic.defaults = {
-    logLevel    = 100,
-    debug       = true,
-    sellAllJunk = true,
-    filters     = {}
+    config = {
+        logLevel    = 200, -- Default is to only show INFO messages
+        sellAllJunk = true
+    },
+    filters = {{displayName = 'Trash', itemType = ITEMTYPE_TRASH }}
 }
 
 -- Container for slash commands
@@ -31,6 +32,34 @@ LootomaticLogger = {
 }
 
 --[[
+-- @param mixed v
+-- @return boolean
+--]]
+function toboolean(v)
+    if (type(v) == 'string') then
+        if ('yes' == v or 'y' == v or 'true' == v) then
+            return true
+        else
+            return false
+        end
+    end
+
+    if (type(v) == 'number') then
+        if 0 == v then
+            return false
+        else
+            return true
+        end
+    end
+
+    if (type(v) == 'boolean') then
+        return v
+    end
+
+    error('Cannot convert value to boolean')
+end
+
+--[[
 -- eso Item class, helps to get information about an item
 --]]
 LootItem = {}
@@ -41,18 +70,12 @@ LootItem.__index = LootItem
 --]]
 function LootItem.New(itemName)
     local self = setmetatable({}, LootItem)
-    self.name,  self.color,
-    self.n3,  self.id,
-    self.n5,  self.n6,
-    self.n7,  self.n8,
-    self.n9,  self.n10,
-    self.n11, self.n12,
-    self.n13, self.n14,
-    self.n15, self.n16,
-    self.n17, self.n18,
-    self.n19, self.n20,
-    self.n21, self.n22,
-    self.n23, self.n24 = ZO_LinkHandler_ParseLink(itemName)
+    self.name,  self.color, self.n3,  self.id,
+    self.n5,  self.n6, self.n7,  self.n8,
+    self.n9,  self.n10, self.n11, self.n12,
+    self.n13, self.n14, self.n15, self.n16,
+    self.n17, self.n18, self.n19, self.n20,
+    self.n21, self.n22, self.n23, self.n24 = ZO_LinkHandler_ParseLink(itemName)
     self.icon, self.sellPrice, self.meetsUsageRequirement, self.equipType, self.itemStyle = GetItemLinkInfo(itemName)
     return self
 end
@@ -68,14 +91,23 @@ function LootItem.LoadByBagAndSlot(bagId, slotId)
     i.itemType = GetItemType(bagId, slotId)
     return i
 end
+
+-- Loot filter, help class to find matches when loot obtained
 LootFilter = {}
 LootFilter.__index = LootFilter
 function LootFilter.New(defaults)
     local self = setmetatable(defaults, LootFilter)
     return self
 end
+
+--[[
+-- Checks to see if item matches a filter
+--
+-- @param LootItem lootItem
+-- @return boolean
+--]]
 function LootFilter:IsMatch(lootItem)
-    if self.itemType == lootItem.itemType then
+    if (self.itemType == lootItem.itemType) then
         return true
     end
 
@@ -89,27 +121,14 @@ end
 -- @param integer level
 --]]
 function Lootomatic.Log(text, level)
-    local defaultLogLevel = Lootomatic.db.logLevel
-    -- if logLevel not set, set to default
-    if nil ~= level then
-        level = defaultLogLevel
-    end
-    -- disabled logger
-    if 0 == level then
+    local logLevel = Lootomatic.db.config.logLevel
+
+    -- logger is disabled
+    if 0 == logLevel then
         return
     end
-    -- Print WARN messages
-    if 300 >= level then
-        d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
-        return
-    end
-    -- Print INFO messages
-    if 200 >= level then
-        d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
-        return
-    end
-    -- Print DEBUG messages
-    if 100 >= level then
+
+    if level >= logLevel then
         d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
         return
     end
@@ -151,7 +170,7 @@ function Lootomatic.OnLootReceived(eventCode, lootedBy, itemName, quantity, item
     Lootomatic.Log('onLootReceived', LootomaticLogger.DEBUG)
     local i = LootItem.New(itemName)
     if i.name then
-        Lootomatic.Log('Obtained Item: ' .. i.name, LootomaticLogger.DEBUG)
+        Lootomatic.Log('Loot Obtained: ' .. i.name, LootomaticLogger.INFO)
     end
 end
 
@@ -174,10 +193,9 @@ end
 --]]
 function Lootomatic.OnOpenStore(eventCode)
     Lootomatic.Log('onOpenStore', LootomaticLogger.DEBUG)
-    if Lootomatic.db.sellAllJunk then
-        Lootomatic.Log('Auto selling junk enabled', LootomaticLogger.DEBUG)
+    if Lootomatic.db.config.sellAllJunk then
         SellAllJunk()
-        Lootomatic.Log('All junk items sold', LootomaticLogger.DEBUG)
+        Lootomatic.Log('All junk items sold', LootomaticLogger.INFO)
     end
 end
 
@@ -192,48 +210,76 @@ end
 function Lootomatic.OnInventorySingleSlotUpdate(eventCode, bagId, slotId, isNewItem, itemSoundCategory, updateReason)
     if (not isNewItem) then return end
     Lootomatic.Log('onInventorySingleSlotUpdate', LootomaticLogger.DEBUG)
-    local i = LootItem.LoadByBagAndSlot(bagId, slotId)
+    local lootItem = LootItem.LoadByBagAndSlot(bagId, slotId)
     --[[
     -- Check filters and mark item as junk if it matches
     -- a filter
     --]]
-    for i,v in pairs(Lootomatic.db.filters) do
-        d(i)
-        d(v)
+    for i,v in ipairs(Lootomatic.db.filters) do
+        local lootFilter = LootFilter.New(v)
+        if lootFilter:IsMatch(lootItem) then
+            Lootomatic.Log('Matched filter, marking item ' .. lootItem.name .. ' as Junk', LootomaticLogger.INFO)
+            SetItemIsJunk(bagId, slotId, true)
+        end
     end
-    if i.itemType == ITEMTYPE_TRASH then
+    
+    --[[ @TODO Remove this
+    if lootItem.itemType == ITEMTYPE_TRASH then
         Lootomatic.Log('Obtained Item is Trash, marking as Junk', LootomaticLogger.INFO)
         SetItemIsJunk(bagId, slotId, true)
     end
+    --]]
 end
 
 --[[
+-- Display help
+--]]
+function LootomaticCommands.Help(cmd)
+    Lootomatic.Log('config <key> <value>', LootomaticLogger.INFO)
+    Lootomatic.Log('filters [list OR add OR delete OR show]', LootomaticLogger.INFO)
+end
+
+--[[
+-- Manage configuration settings
 --
+-- @param string cmd
 --]]
-function LootomaticCommands.Help()
-    Lootomatic.Log('debug [true OR false]', LootomaticLogger.INFO)
-    Lootomatic.Log('filters [list OR add OR delete]', LootomaticLogger.INFO)
-end
+function LootomaticCommands.Config(cmd)
+    if 'list' == cmd then
+        d(Lootomatic.db.config)
+        return
+    end
 
---[[
---]]
-function LootomaticCommands.Debug(toggle)
-    if nil == toggle then
+    local options = { string.match(cmd,"^(%S*)%s*(.*)$") }
+
+    if nil == options[1] or nil == options[2] then
         LootomaticCommands.Help()
         return
     end
-    if 'true' == toggle then
-        Lootomatic.db.debug = true
-    elseif 'false' == toggle then
-        lootomatic.db.debug = false
-    else
-        LootomaticCommands.Help()
+
+    local config = Lootomatic.db.config
+
+    if 'loglevel' == options[1] then
+        newLogLevel = tonumber(options[2])
+        -- @TODO check to make sure newLogLevel is valid value
+        config.logLevel = newLogLevel
+        Lootomatic.Log('Updated configuration', LootomaticLogger.INFO)
         return
     end
-    Lootomatic.Log('Updated setting', LootomaticLogger.DEBUG)
+
+    if 'sellalljunk' == options[1] then
+        config.sellAllJunk = toboolean(options[2])
+        Lootomatic.Log('Updated configuration', LootomaticLogger.INFO)
+        return
+    end
+
+    LootomaticCommands.Help()
 end
 
 --[[
+-- What filter command to run
+--
+-- @param string cmd
 --]]
 function LootomaticCommands.Filters(cmd)
     if nil == cmd then
@@ -248,20 +294,30 @@ function LootomaticCommands.Filters(cmd)
 
     if 'clear' == cmd then
         Lootomatic.db.filters = {}
-        local f = LootFilter.New({itemType = ITEMTYPE_TRASH})
+        -- @TODO remove this filter
+        local f = LootFilter.New({itemType = ITEMTYPE_TRASH, displayName = 'Trash'})
         table.insert(Lootomatic.db.filters, f)
         Lootomatic.Log('Filters have been cleared', LootomaticLogger.INFO)
         return
     end
 
-    if string.match(cmd, '^add .*') then
-        local filter = {}
-        local itemType = string.match(cmd, 'itemtype:(.*)')
-        if nil ~= itemType then
-            filter['itemType'] = itemType
+    if string.match(cmd, '^add%s.*') then
+        local filter = {itemType = nil, displayName = nil}
+        for k,v in string.gmatch(cmd, '%s([%w]+):?([%w]+)%s-') do
+            if 'itemtype' == k then
+                filter['itemType'] = tonumber(v)
+            elseif 'displayname' == k then
+                filter['displayName'] = v
+            else
+                filter[k] = v
+            end
         end
         table.insert(Lootomatic.db.filters, filter)
         Lootomatic.Log('Added new filter', LootomaticLogger.INFO)
+        return
+    end
+
+    if string.match(cmd, '^modify%s.*') then
         return
     end
 
@@ -277,12 +333,17 @@ function LootomaticCommands.Filters(cmd)
     LootomaticCommands.Help()
 end
 
+--[[
+-- List all known filters
+--]]
 function LootomaticCommands.FiltersList()
-    ----[[
     for i,v in pairs(Lootomatic.db.filters) do
-        Lootomatic.Log('[' .. i .. ']', LootomaticLogger.INFO)
+        local displayName = ''
+        if v.displayName then
+            displayName = v.displayName
+        end
+        Lootomatic.Log('[' .. i .. '] ' .. displayName, LootomaticLogger.INFO)
     end
-    --]]
 end
 
 --[[
@@ -301,10 +362,11 @@ function Lootomatic.Command(parameters)
         return
     end
 
-    if options[1] == 'debug' then
-        LootomaticCommands.Debug(options[2])
+    if options[1] == 'config' then
+        LootomaticCommands.Config(options[2])
     end
 
+    -- Want to manage filters
     if options[1] == 'filters' then
         LootomaticCommands.Filters(options[2])
     end

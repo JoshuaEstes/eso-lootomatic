@@ -1,3 +1,10 @@
+0.3.0
+	- Fix for quest items
+	- Code clean up
+	- Cleaned up some more debug messages
+	- Setup configuration system
+	- Made filters work a little better
+
 0.2.0
 	- Added the ability to add filters based on itemType 
 	- Added the ability to list filters

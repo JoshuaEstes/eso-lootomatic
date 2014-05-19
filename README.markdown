@@ -20,45 +20,70 @@ Currently this script is console based and can only be used in a chat window.
 
 Commands:
 
-    /lootomatic filters list
-    /lootomatic filters show <index>
-    /lootomatic filters clear
-    /lootomatic filters add <filters>
-    /lootomatic filters update <index> <filters>
-    /lootomatic filters delete <index>
+    /lootomatic config <command>
+    /lootomatic filters <command>
+
+## config list
+
+Used to display the current settings.
+
+    /lootomatic config list
+
+## config setting value
+
+Used to change the configuration settings
+
+Examples:
+
+    /lootomatic config sellalljunk true
+    /lootomatic config sellalljunk false
+    /lootomatic config loglevel 0
+    /lootomatic config loglevel 100
+    /lootomatic config loglevel 200
+    /lootomatic config loglevel 300
+
+sellalljunk = Auto sell junk when vendor window opens
+
+loglevel = Verbosity of output by Lootomatic. 0 is off, 100 is DEBUG, 200 is INFO, 300 is WARN
 
 ## filters list
 
-This command will list all of your current loot filters
+This command will list all of your current loot filters.
+
+    /lootomatic filters list
 
 ## filters show
 
-Shows more detail about a filter
+Shows more detail about a filter.
+
+    /lootomatic filters show 1
 
 ## filters clear
 
-Clear all loot filters
+Clear all loot filters.
+
+    /lootomatic filters clear
 
 ## filters add
 
 Add a new loot filter
 
-## filters update
+    /lootomatic filters add itemtype:48 displayname:Trash
 
-Replaces filters
+Item Type values come from http://wiki.esoui.com/Raw_globals_dump Just do a search
+for the `ITEMTYPE_` constants.
+
+## filters modify/update
+
+@TODO
 
 ## filters delete
-
-Deletes on of the loot filters, you can see the index by running
-the `filters list` command
-
-## Examples
 
 @TODO
 
 ## Filter Types
 
-@TODO
+* itemtype = ITEMTYPE values from http://wiki.esoui.com/Raw_globals_dump
 
 # Support
 
