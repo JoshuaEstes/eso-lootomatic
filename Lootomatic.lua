@@ -9,7 +9,135 @@
 --]]
 local Lootomatic   = {}
 Lootomatic.name    = 'Lootomatic'
-Lootomatic.version = 1
+Lootomatic.version = 2
+
+Lootomatic.RulesEngine = {}
+Lootomatic.RulesEngine.Rule = {}
+Lootomatic.RulesEngine.Rule.__index = Lootomatic.RulesEngine.Rule
+--[[
+-- @param table condition
+-- @return Rule
+--]]
+function Lootomatic.RulesEngine.Rule.New(condition)
+    local self = setmetatable({['condition'] = condition}, Lootomatic.RulesEngine.Rule)
+    return self
+end
+
+--[[
+-- @param table context
+-- @return boolean
+--]]
+function Lootomatic.RulesEngine.Rule:Evaluate(context)
+    return self.condition.evaluate(context)
+end
+Lootomatic.RulesEngine.Value = {}
+Lootomatic.RulesEngine.Value.__index = Lootomatic.RulesEngine.Value
+--[[
+-- @param mixed value
+-- @return Value
+--]]
+function Lootomatic.RulesEngine.Value.New(value)
+    local self = setmetatable({['value'] = value}, Lootomatic.RulesEngine.Value)
+    return self
+end
+--[[
+-- @return mixed
+--]]
+function Lootomatic.RulesEngine.Value:GetValue()
+    return self.value
+end
+--[[
+-- @param Value value
+-- @return boolean
+--]]
+function Lootomatic.RulesEngine.Value:EqualTo(value)
+    return (self.value == value:GetValue())
+end
+--[[
+-- @param Value value
+-- @return boolean
+--]]
+function Lootomatic.RulesEngine.Value:Contains(value)
+end
+--[[
+-- @param Value value
+-- @return boolean
+--]]
+function Lootomatic.RulesEngine.Value:GreaterThan(value)
+    return (self.value > value:GetValue())
+end
+--[[
+-- @param Value value
+-- @return boolean
+--]]
+function Lootomatic.RulesEngine.Value:LessThan(value)
+    return (self.value < value:GetValue())
+end
+Lootomatic.RulesEngine.Variable = {}
+Lootomatic.RulesEngine.Variable.__index = Lootomatic.RulesEngine.Variable
+--[[
+-- @param string name
+-- @param mixed value
+-- @return Variable
+--]]
+function Lootomatic.RulesEngine.Variable.New(name, value)
+    local self = setmetatable({['name'] = name, ['value'] = value}, Lootomatic.RulesEngine.Variable)
+    return self
+end
+--[[
+-- @return string
+--]]
+function Lootomatic.RulesEngine.Variable:GetName()
+    return self.name
+end
+--[[
+-- @return mixed
+--]]
+function Lootomatic.RulesEngine.Variable:GetValue()
+    return self.value
+end
+--[[
+-- @param table context
+-- @return Value
+--]]
+function Lootomatic.RulesEngine.Variable:PrepareValue(context)
+    if nil ~= self.name and nil ~= context[self.name] then
+        value = context[self.value]
+    else
+        value = self.value
+    end
+
+    return Lootomatic.RulesEngine.Value.New(value)
+end
+Lootomatic.RulesEngine.ComparisonOperator = {}
+Lootomatic.RulesEngine.ComparisonOperator.__index = Lootomatic.RulesEngine.ComparisonOperator
+--[[
+-- @param Variable
+-- @param Variable
+-- @return ComparisonOperator
+--]]
+function Lootomatic.RulesEngine.ComparisonOperator.New(left, right)
+    local self = setmetatable({['left'] = left, ['right'] = right}, Lootomatic.RulesEngine.ComparisonOperator)
+    return self
+end
+Lootomatic.RulesEngine.EqualTo = {}
+Lootomatic.RulesEngine.EqualTo.__index = Lootomatic.RulesEngine.ComparisonOperator
+--[[
+-- @param table context
+-- @return boolean
+--]]
+function Lootomatic.RulesEngine.EqualTo:Evaluate(context)
+    return (self.left:PrepareValue(context):EqualTo(self.right))
+end
+Lootomatic.RulesEngine.Contains = {}
+Lootomatic.RulesEngine.Contains.__index = Lootomatic.RulesEngine.ComparisonOperator
+--[[
+-- @param table context
+-- @return boolean
+--]]
+function Lootomatic.RulesEngine.Contains:Evaluate(context)
+    return (self.left:PrepareValue(context):Contains(self.right))
+end
 
 -- Defaults
 Lootomatic.defaults = {
@@ -17,7 +145,21 @@ Lootomatic.defaults = {
         logLevel    = 200, -- Default is to only show INFO messages
         sellAllJunk = true
     },
-    filters = {{displayName = 'Trash', itemType = ITEMTYPE_TRASH }}
+    filters = {
+        {
+            name = 'Trash',
+            enabled = true,
+            rule = {
+                condition = {
+                    type = 'EqualTo',
+                    variable = {
+                        name = 'itemType',
+                        value = ITEMTYPE_TRASH
+                    }
+                }
+            }
+        }
+    }
 }
 
 -- Container for slash commands
@@ -67,6 +209,7 @@ LootItem.__index = LootItem
 
 --[[
 -- @param string itemName
+-- @return LootItem
 --]]
 function LootItem.New(itemName)
     local self = setmetatable({}, LootItem)
@@ -85,6 +228,7 @@ end
 --
 -- @param integer bagId
 -- @param integer slotId
+-- @return LootItem
 --]]
 function LootItem.LoadByBagAndSlot(bagId, slotId)
     local i = LootItem.New(GetItemLink(bagId, slotId, LINK_STYLE_DEFAULT))
@@ -95,6 +239,11 @@ end
 -- Loot filter, help class to find matches when loot obtained
 LootFilter = {}
 LootFilter.__index = LootFilter
+
+--[[
+-- @param table defaults
+-- @return LootFilter
+--]]
 function LootFilter.New(defaults)
     local self = setmetatable(defaults, LootFilter)
     return self
@@ -135,60 +284,6 @@ function Lootomatic.Log(text, level)
 end
 
 --[[
--- Event trigger when loot window is closed
---
--- @param integer eventCode
---]]
-function Lootomatic.OnLootClosed(eventCode)
-    Lootomatic.Log('onLootClosed', LootomaticLogger.DEBUG)
-end
-
---[[
--- @param integer eventCode
--- @param integer reason
--- @param string  itemName
---]]
-function Lootomatic.OnLootItemFailed(eventCode, reason, itemName)
-    Lootomatic.Log('onLootItemFailed', LootomaticLogger.DEBUG)
-    Lootomatic.Log('reason: ' .. reason, LootomaticLogger.DEBUG)
-    Lootomatic.Log('itemName' .. itemName, LootomaticLogger.DEBUG)
-end
-
---[[
--- Event that is triggered for every loot item received
---
--- @param integer eventCode
--- @param string  lootedBy
--- @param string  itemName
--- @param integer quantity
--- @param integer itemSound
--- @param integer lootType
--- @param boolean isSelf
---]]
-function Lootomatic.OnLootReceived(eventCode, lootedBy, itemName, quantity, itemSound, lootType, isSelf)
-    if (not isSelf) then return end
-    Lootomatic.Log('onLootReceived', LootomaticLogger.DEBUG)
-    local i = LootItem.New(itemName)
-    if i.name then
-        Lootomatic.Log('Loot Obtained: ' .. i.name, LootomaticLogger.INFO)
-    end
-end
-
---[[
--- @param integer eventCode
---]]
-function Lootomatic.OnLootUpdated(eventCode)
-    Lootomatic.Log('onLootUpdated', LootomaticLogger.DEBUG)
-end
-
---[[
--- @param integer eventCode
---]]
-function Lootomatic.OnCloseStore(eventCode)
-    Lootomatic.Log('onCloseStore', LootomaticLogger.DEBUG)
-end
-
---[[
 -- @param integer eventCode
 --]]
 function Lootomatic.OnOpenStore(eventCode)
@@ -222,13 +317,6 @@ function Lootomatic.OnInventorySingleSlotUpdate(eventCode, bagId, slotId, isNewI
             SetItemIsJunk(bagId, slotId, true)
         end
     end
-    
-    --[[ @TODO Remove this
-    if lootItem.itemType == ITEMTYPE_TRASH then
-        Lootomatic.Log('Obtained Item is Trash, marking as Junk', LootomaticLogger.INFO)
-        SetItemIsJunk(bagId, slotId, true)
-    end
-    --]]
 end
 
 --[[
@@ -382,14 +470,7 @@ function Lootomatic.OnAddOnLoaded(eventCode, addOnName)
     end
     Lootomatic.db = ZO_SavedVars:New('Lootomatic_Data', 1, nil, Lootomatic.defaults)
 
-    -- Loot events
-    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_LOOT_CLOSED, Lootomatic.OnLootClosed)
-    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_LOOT_ITEM_FAILED, Lootomatic.OnLootItemFailed)
-    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_LOOT_RECEIVED, Lootomatic.OnLootReceived)
-    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_LOOT_UPDATED, Lootomatic.OnLootUpdated)
-
     -- Vendor events
-    EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_CLOSE_STORE, Lootomatic.OnCloseStore)
     EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_OPEN_STORE, Lootomatic.OnOpenStore)
 
     -- Inventory Events
