@@ -190,29 +190,58 @@ function LootomaticCommands.Filters(cmd)
         return
     end
 
+    -- /lootomatic filters list
     if 'list' == cmd then
         LootomaticCommands.FiltersList()
         return
     end
 
+    -- /lootomatic filters clear
     if 'clear' == cmd then
         Lootomatic.db.filters = {}
-        -- @TODO remove this filter
-        --local f = Lootomatic.Filter.New({itemType = ITEMTYPE_TRASH, displayName = 'Trash'})
-        --table.insert(Lootomatic.db.filters, f)
         Lootomatic.Log('Filters have been cleared', LootomaticLogger.INFO)
         return
     end
 
+    -- /lootomatic delete 1
+    if string.match(cmd, '^delete%s%d+') then
+        local i = string.match(cmd, '^delete%s(%d+)')
+        local filter = Lootomatic.db.filters[tonumber(i)]
+        if nil == filter then
+            Lootomatic.Log('There is no filter on that index', LootomaticLogger.WARN)
+            return
+        end
+        table.remove(Lootomatic.db.filters, i)
+        Lootomatic.Log('Filter has been deleted, please run /lootomatic filters list for new indexes', LootomaticLogger.INFO)
+        return
+    end
+
+    -- /lootomatic filters add name:Trash enabled:true condition.type:EqualTo condition.name:itemType condition.value:48
     if string.match(cmd, '^add%s.*') then
-        local filter = {itemType = nil, displayName = nil}
-        for k,v in string.gmatch(cmd, '%s([%w]+):?([%w]+)%s-') do
-            if 'itemtype' == k then
-                filter['itemType'] = tonumber(v)
-            elseif 'displayname' == k then
-                filter['displayName'] = v
-            else
-                filter[k] = v
+        local filter = {
+            name = nil,
+            enabled = true,
+            rules = {
+                {
+                    condition = {
+                        type = nil,
+                        left = { name = nil, value = nil }
+                    }
+                }
+            }
+        }
+        for k,v in string.gmatch(cmd, '%s([%w\.]+):?([%w]+)%s-') do
+            -- Good place for a filter builder
+            if 'name' == k then
+                filter.name = v
+            elseif 'enabled' == k then
+                filter.enabled = toboolean(v)
+            elseif 'condition.type' == k then
+                filter.rules[1].condition.type = v
+            elseif 'condition.name' == k then
+                filter.rules[1].condition.left.name = v
+            elseif 'condition.value' == k then
+                filter.rules[1].condition.left.value = v
             end
         end
         table.insert(Lootomatic.db.filters, filter)
@@ -220,6 +249,33 @@ function LootomaticCommands.Filters(cmd)
         return
     end
 
+    -- /lootomatic filters modify 1 name:Trash enabled:true condition.type:EqualTo condition.name:itemType condition.value:48
+    if string.match(cmd, '^modify%s%d+%s.*') then
+        local i = string.match(cmd, '^modify%s(%d+)')
+        local filter = Lootomatic.db.filters[tonumber(i)]
+        if nil == filter then
+            Lootomatic.Log('There is no filter on that index', LootomaticLogger.WARN)
+            return
+        end
+        for k,v in string.gmatch(cmd, '%s([%w\.]+):?([%w]+)%s-') do
+            -- Good place for a filter builder
+            if 'name' == k then
+                filter.name = v
+            elseif 'enabled' == k then
+                filter.enabled = toboolean(v)
+            elseif 'condition.type' == k then
+                filter.rules[1].condition.type = v
+            elseif 'condition.name' == k then
+                filter.rules[1].condition.left.name = v
+            elseif 'condition.value' == k then
+                filter.rules[1].condition.left.value = v
+            end
+        end
+        Lootomatic.Log('Modified filter', LootomaticLogger.INFO)
+        return
+    end
+
+    -- /lootomatic filters show 1
     if string.match(cmd, '^show%s.*') then
         local i = string.match(cmd, '^show%s(%d+)')
         local filter = Lootomatic.db.filters[tonumber(i)]
@@ -273,11 +329,13 @@ function Lootomatic.Command(parameters)
 
     if options[1] == 'config' then
         LootomaticCommands.Config(options[2])
+        return
     end
 
     -- Want to manage filters
     if options[1] == 'filters' then
         LootomaticCommands.Filters(options[2])
+        return
     end
 
     if options[1] == 'test' then
@@ -290,7 +348,10 @@ function Lootomatic.Command(parameters)
         }
         local e = r:Evaluate(context)
         d(e)
+        return
     end
+
+    LootomaticCommands.Help()
 end
 
 --[[
