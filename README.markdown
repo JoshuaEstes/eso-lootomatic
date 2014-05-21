@@ -6,7 +6,19 @@ loot that you obtain throughout your journey.
 
 # Features
 
-- Filters that allow you to mark items as junk
+- Filters that allow you to mark items as junk Example
+  - Item Type is Trash
+  - Item Type is Lure
+  - Item Trait is Ornate Jewelry
+  - Item ID is X
+  - Item sellPrice is greater than X gold
+  - Possibilities are endless!
+- Filters can be enabled or disabled
+- Each filter can have multiple rules
+  - Item Type is X and Item Quality is X
+  - Item Type is Armor and Item Trait is Ornate
+- Filter types: EqualTo, GreaterThan, LessThan, Contains, NotEqualTo,
+  GreaterThanOrEqualTo, LessThanOrEqualTo, DoesNotContain
 - Auto marks Trash items as junk
 - Auto sell junk items when opening a vendor store
 
@@ -68,10 +80,7 @@ Clear all loot filters.
 
 Add a new loot filter
 
-    /lootomatic filters add itemtype:48 displayname:Trash
-
-Item Type values come from http://wiki.esoui.com/Raw_globals_dump Just do a search
-for the `ITEMTYPE_` constants.
+    /lootomatic filters add name:Trash enabled:true condition.type:EqualTo condition.name:itemType condition.value:48
 
 ## filters modify/update
 
@@ -79,7 +88,44 @@ for the `ITEMTYPE_` constants.
 
 ## filters delete
 
-@TODO
+Deletes a filter by index
+
+    /lootomatic filters delete 1
+
+# Conditions
+
+When you add a filter, you are defining a list of rules. Each filter will need
+to have at least one rule to be able to function. The following rule types are
+supported.
+
+* EqualTo
+* GreaterThan
+* LessThan
+* Contains
+* NotEqualTo
+* GreaterThanOrEqualTo
+* LessThanOrEqualTo
+* DoesNotContain
+
+Along with the condition you will need to give it a name equal to that
+of the property on the Item. (There's a list below) You will also
+need to specify a value.
+
+# Item Data
+
+The following list is what you will need to set as a name when adding a rule
+to your filter.
+
+* id
+* name
+* itemType
+* itemStyle
+* sellPrice
+* meetsUsageRequirement
+* equipType
+* itemStyle
+
+More will be coming soon
 
 # Support
 
