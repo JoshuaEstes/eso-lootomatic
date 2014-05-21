@@ -6,9 +6,9 @@ loot that you obtain throughout your journey.
 
 # Features
 
-- Auto mark Trash items as junk
-- Auto sell junk items when opening a vendor store
 - Filters that allow you to mark items as junk
+- Auto marks Trash items as junk
+- Auto sell junk items when opening a vendor store
 
 # Manual Install
 
@@ -80,10 +80,6 @@ for the `ITEMTYPE_` constants.
 ## filters delete
 
 @TODO
-
-## Filter Types
-
-* itemtype = ITEMTYPE values from http://wiki.esoui.com/Raw_globals_dump
 
 # Support
 
