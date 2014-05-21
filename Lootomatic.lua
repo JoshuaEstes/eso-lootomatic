@@ -7,137 +7,10 @@
 -- at your friendly vendor.
 --
 --]]
+
 local Lootomatic   = {}
 Lootomatic.name    = 'Lootomatic'
 Lootomatic.version = 2
-
-Lootomatic.RulesEngine = {}
-Lootomatic.RulesEngine.Rule = {}
-Lootomatic.RulesEngine.Rule.__index = Lootomatic.RulesEngine.Rule
---[[
--- @param table condition
--- @return Rule
---]]
-function Lootomatic.RulesEngine.Rule.New(condition)
-    local self = setmetatable({['condition'] = condition}, Lootomatic.RulesEngine.Rule)
-    return self
-end
-
---[[
--- @param table context
--- @return boolean
---]]
-function Lootomatic.RulesEngine.Rule:Evaluate(context)
-    return self.condition.evaluate(context)
-end
-Lootomatic.RulesEngine.Value = {}
-Lootomatic.RulesEngine.Value.__index = Lootomatic.RulesEngine.Value
---[[
--- @param mixed value
--- @return Value
---]]
-function Lootomatic.RulesEngine.Value.New(value)
-    local self = setmetatable({['value'] = value}, Lootomatic.RulesEngine.Value)
-    return self
-end
---[[
--- @return mixed
---]]
-function Lootomatic.RulesEngine.Value:GetValue()
-    return self.value
-end
---[[
--- @param Value value
--- @return boolean
---]]
-function Lootomatic.RulesEngine.Value:EqualTo(value)
-    return (self.value == value:GetValue())
-end
---[[
--- @param Value value
--- @return boolean
---]]
-function Lootomatic.RulesEngine.Value:Contains(value)
-end
---[[
--- @param Value value
--- @return boolean
---]]
-function Lootomatic.RulesEngine.Value:GreaterThan(value)
-    return (self.value > value:GetValue())
-end
---[[
--- @param Value value
--- @return boolean
---]]
-function Lootomatic.RulesEngine.Value:LessThan(value)
-    return (self.value < value:GetValue())
-end
-Lootomatic.RulesEngine.Variable = {}
-Lootomatic.RulesEngine.Variable.__index = Lootomatic.RulesEngine.Variable
---[[
--- @param string name
--- @param mixed value
--- @return Variable
---]]
-function Lootomatic.RulesEngine.Variable.New(name, value)
-    local self = setmetatable({['name'] = name, ['value'] = value}, Lootomatic.RulesEngine.Variable)
-    return self
-end
---[[
--- @return string
---]]
-function Lootomatic.RulesEngine.Variable:GetName()
-    return self.name
-end
---[[
--- @return mixed
---]]
-function Lootomatic.RulesEngine.Variable:GetValue()
-    return self.value
-end
---[[
--- @param table context
--- @return Value
---]]
-function Lootomatic.RulesEngine.Variable:PrepareValue(context)
-    if nil ~= self.name and nil ~= context[self.name] then
-        value = context[self.value]
-    else
-        value = self.value
-    end
-
-    return Lootomatic.RulesEngine.Value.New(value)
-end
-Lootomatic.RulesEngine.ComparisonOperator = {}
-Lootomatic.RulesEngine.ComparisonOperator.__index = Lootomatic.RulesEngine.ComparisonOperator
---[[
--- @param Variable
--- @param Variable
--- @return ComparisonOperator
---]]
-function Lootomatic.RulesEngine.ComparisonOperator.New(left, right)
-    local self = setmetatable({['left'] = left, ['right'] = right}, Lootomatic.RulesEngine.ComparisonOperator)
-    return self
-end
-Lootomatic.RulesEngine.EqualTo = {}
-Lootomatic.RulesEngine.EqualTo.__index = Lootomatic.RulesEngine.ComparisonOperator
---[[
--- @param table context
--- @return boolean
---]]
-function Lootomatic.RulesEngine.EqualTo:Evaluate(context)
-    return (self.left:PrepareValue(context):EqualTo(self.right))
-end
-Lootomatic.RulesEngine.Contains = {}
-Lootomatic.RulesEngine.Contains.__index = Lootomatic.RulesEngine.ComparisonOperator
---[[
--- @param table context
--- @return boolean
---]]
-function Lootomatic.RulesEngine.Contains:Evaluate(context)
-    return (self.left:PrepareValue(context):Contains(self.right))
-end
 
 -- Defaults
 Lootomatic.defaults = {
@@ -149,12 +22,12 @@ Lootomatic.defaults = {
         {
             name = 'Trash',
             enabled = true,
-            rule = {
-                condition = {
-                    type = 'EqualTo',
-                    variable = {
-                        name = 'itemType',
-                        value = ITEMTYPE_TRASH
+            rules = {
+                {
+                    condition = {
+                        type = 'EqualTo',
+                        left = { name = 'itemType', value = 48 },
+                        right = { name = '', value = '' }
                     }
                 }
             }
@@ -202,68 +75,6 @@ function toboolean(v)
 end
 
 --[[
--- eso Item class, helps to get information about an item
---]]
-LootItem = {}
-LootItem.__index = LootItem
-
---[[
--- @param string itemName
--- @return LootItem
---]]
-function LootItem.New(itemName)
-    local self = setmetatable({}, LootItem)
-    self.name,  self.color, self.n3,  self.id,
-    self.n5,  self.n6, self.n7,  self.n8,
-    self.n9,  self.n10, self.n11, self.n12,
-    self.n13, self.n14, self.n15, self.n16,
-    self.n17, self.n18, self.n19, self.n20,
-    self.n21, self.n22, self.n23, self.n24 = ZO_LinkHandler_ParseLink(itemName)
-    self.icon, self.sellPrice, self.meetsUsageRequirement, self.equipType, self.itemStyle = GetItemLinkInfo(itemName)
-    return self
-end
-
---[[
--- Loads an item based on where it is based on the slot in a bag
---
--- @param integer bagId
--- @param integer slotId
--- @return LootItem
---]]
-function LootItem.LoadByBagAndSlot(bagId, slotId)
-    local i = LootItem.New(GetItemLink(bagId, slotId, LINK_STYLE_DEFAULT))
-    i.itemType = GetItemType(bagId, slotId)
-    return i
-end
-
--- Loot filter, help class to find matches when loot obtained
-LootFilter = {}
-LootFilter.__index = LootFilter
-
---[[
--- @param table defaults
--- @return LootFilter
---]]
-function LootFilter.New(defaults)
-    local self = setmetatable(defaults, LootFilter)
-    return self
-end
-
---[[
--- Checks to see if item matches a filter
---
--- @param LootItem lootItem
--- @return boolean
---]]
-function LootFilter:IsMatch(lootItem)
-    if (self.itemType == lootItem.itemType) then
-        return true
-    end
-
-    return false
-end
-
---[[
 -- Displays text in the chat window
 --
 -- @param string  text
@@ -271,14 +82,17 @@ end
 --]]
 function Lootomatic.Log(text, level)
     local logLevel = Lootomatic.db.config.logLevel
+    if nil == level then
+        level = LootomaticLogger.INFO
+    end
 
     -- logger is disabled
     if 0 == logLevel then
         return
     end
 
-    if level >= logLevel then
-        d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. text)
+    if nil ~= logLevel and level >= logLevel then
+        d('[Lootomatic] ' .. LootomaticLogger.levels[level] .. ' ' .. tostring(text))
         return
     end
 end
@@ -305,16 +119,17 @@ end
 function Lootomatic.OnInventorySingleSlotUpdate(eventCode, bagId, slotId, isNewItem, itemSoundCategory, updateReason)
     if (not isNewItem) then return end
     Lootomatic.Log('onInventorySingleSlotUpdate', LootomaticLogger.DEBUG)
-    local lootItem = LootItem.LoadByBagAndSlot(bagId, slotId)
+    local lootItem = LootomaticItem.LoadByBagAndSlot(bagId, slotId)
     --[[
     -- Check filters and mark item as junk if it matches
     -- a filter
     --]]
     for i,v in ipairs(Lootomatic.db.filters) do
-        local lootFilter = LootFilter.New(v)
-        if lootFilter:IsMatch(lootItem) then
+        local filter = LootomaticFilter.New(v)
+        if filter:IsMatch(lootItem) then
             Lootomatic.Log('Matched filter, marking item ' .. lootItem.name .. ' as Junk', LootomaticLogger.INFO)
             SetItemIsJunk(bagId, slotId, true)
+            break
         end
     end
 end
@@ -383,8 +198,8 @@ function LootomaticCommands.Filters(cmd)
     if 'clear' == cmd then
         Lootomatic.db.filters = {}
         -- @TODO remove this filter
-        local f = LootFilter.New({itemType = ITEMTYPE_TRASH, displayName = 'Trash'})
-        table.insert(Lootomatic.db.filters, f)
+        --local f = Lootomatic.Filter.New({itemType = ITEMTYPE_TRASH, displayName = 'Trash'})
+        --table.insert(Lootomatic.db.filters, f)
         Lootomatic.Log('Filters have been cleared', LootomaticLogger.INFO)
         return
     end
@@ -405,15 +220,24 @@ function LootomaticCommands.Filters(cmd)
         return
     end
 
-    if string.match(cmd, '^modify%s.*') then
-        return
-    end
-
-    if string.match(cmd, '^show .*') then
-        local i = string.match(cmd, '^show (%d+)')
+    if string.match(cmd, '^show%s.*') then
+        local i = string.match(cmd, '^show%s(%d+)')
         local filter = Lootomatic.db.filters[tonumber(i)]
-        for i,v in pairs(filter) do
-            Lootomatic.Log(i .. ': ' .. v, LootomaticLogger.INFO)
+        if nil == filter then
+            Lootomatic.Log('There is no filter on that index', LootomaticLogger.WARN)
+            return
+        end
+        filter = LootomaticFilter.New(filter)
+        Lootomatic.Log('Name: ' .. filter:GetName(), LootomaticLogger.INFO)
+        local enabled = 'No'
+        if filter:IsEnabled() then
+            enabled = 'Yes'
+        end
+        Lootomatic.Log('Enabled: ' .. enabled, LootomaticLogger.INFO)
+        Lootomatic.Log('Rules: ', LootomaticLogger.INFO)
+        for i,v in pairs(filter:GetRules()) do
+            local c = v.condition
+            Lootomatic.Log('['..i..'] ' .. c.left.name .. ' is ' .. c.type .. ' ' .. c.left.value, LootomaticLogger.INFO)
         end
         return
     end
@@ -426,11 +250,8 @@ end
 --]]
 function LootomaticCommands.FiltersList()
     for i,v in pairs(Lootomatic.db.filters) do
-        local displayName = ''
-        if v.displayName then
-            displayName = v.displayName
-        end
-        Lootomatic.Log('[' .. i .. '] ' .. displayName, LootomaticLogger.INFO)
+        local f = LootomaticFilter.New(v)
+        Lootomatic.Log('[' .. i .. '] ' .. f:GetName(), LootomaticLogger.INFO)
     end
 end
 
@@ -457,6 +278,18 @@ function Lootomatic.Command(parameters)
     -- Want to manage filters
     if options[1] == 'filters' then
         LootomaticCommands.Filters(options[2])
+    end
+
+    if options[1] == 'test' then
+        local var1 = Ruler.Variable.New('Filter.itemType', 48)
+        local var2 = Ruler.Variable.New('itemType')
+        local o = Ruler.Operator.EqualTo.New(var1, var2)
+        local r = Ruler.Rule.New(o)
+        local context = {
+            itemType = 48
+        }
+        local e = r:Evaluate(context)
+        d(e)
     end
 end
 

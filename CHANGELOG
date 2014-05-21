@@ -2,6 +2,7 @@
 	- Removed all unused code
 	- Added simple rules engine for filters
 	- Updated the slash commands
+	- Refactored directory structure
 
 0.3.0
 	- Fix for quest items
