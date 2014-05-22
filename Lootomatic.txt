@@ -3,8 +3,14 @@
 ## APIVersion: 100003
 ## SavedVariables: Lootomatic_Data
 
+## Libraries
 lib/Ruler/Ruler.lua
-Lootomatic.lua
+lib/LibAddonMenu-1.0.lua
+lib/LibStub.lua
+
+## Core Code
+LootomaticInterface.lua
 Lootomatic/Item.lua
 Lootomatic/Filter.lua
+Lootomatic.lua
 Lootomatic.xml

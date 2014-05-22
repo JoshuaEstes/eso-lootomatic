@@ -79,7 +79,6 @@ function LootomaticFilter:IsMatch(lootItem)
         if nil ~= 0 then
             local r = Ruler.Rule.New(o)
             local e = r:Evaluate(lootItem)
-            d(e)
             return e
         end
     end

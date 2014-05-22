@@ -7,6 +7,7 @@
 -- at your friendly vendor.
 --
 --]]
+print("Lootomatic")
 
 local Lootomatic   = {}
 Lootomatic.name    = 'Lootomatic'
@@ -372,6 +373,9 @@ function Lootomatic.OnAddOnLoaded(eventCode, addOnName)
 
     -- Initialize slash command
     SLASH_COMMANDS['/lootomatic'] = Lootomatic.Command
+
+    -- Initialize Options
+    LootomaticInterface.New()
 end
 
 EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_ADD_ON_LOADED, Lootomatic.OnAddOnLoaded)

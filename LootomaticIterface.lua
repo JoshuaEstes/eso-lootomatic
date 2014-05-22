@@ -1,3 +1,0 @@
---[[
--- Lootomatic GUI Interface
---]]
