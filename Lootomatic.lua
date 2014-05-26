@@ -374,8 +374,8 @@ function Lootomatic.OnAddOnLoaded(eventCode, addOnName)
     -- Initialize slash command
     SLASH_COMMANDS['/lootomatic'] = Lootomatic.Command
 
-    -- Initialize Options
-    LootomaticInterface.New()
+    -- Initialize Settings
+    Lootomatic_Settings.New(Lootomatic.db)
 end
 
 EVENT_MANAGER:RegisterForEvent(Lootomatic.name, EVENT_ADD_ON_LOADED, Lootomatic.OnAddOnLoaded)

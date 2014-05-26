@@ -1,6 +1,6 @@
 ## Title: Lootomatic
 ## Description: Provides useful functionality for looting
-## APIVersion: 100003
+## APIVersion: 100004
 ## SavedVariables: Lootomatic_Data
 
 ## Libraries
@@ -10,7 +10,8 @@ lib/LibStub.lua
 
 ## Core Code
 LootomaticInterface.lua
-Lootomatic/Item.lua
 Lootomatic/Filter.lua
+Lootomatic/Item.lua
+Lootomatic/Settings.lua
 Lootomatic.lua
 Lootomatic.xml
