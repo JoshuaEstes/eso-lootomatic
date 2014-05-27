@@ -7,8 +7,6 @@
 -- at your friendly vendor.
 --
 --]]
-print("Lootomatic")
-
 local Lootomatic   = {}
 Lootomatic.name    = 'Lootomatic'
 Lootomatic.version = 2
@@ -23,6 +21,8 @@ Lootomatic.defaults = {
         {
             name = 'Trash',
             enabled = true,
+            markAsJunk = true,
+            loot = true,
             rules = {
                 {
                     condition = {
@@ -36,10 +36,33 @@ Lootomatic.defaults = {
     }
 }
 
+Lootomatic.operators = {
+    EqualTo = {},
+    GreaterThan = {},
+    LessThan = {},
+    Contains = {},
+    NotEqualTo = {},
+    GreaterThanOrEqualTo = {},
+    LessThanOrEqualTo = {},
+    DoesNotContain = {}
+}
+
+Lootomatic.variables = {
+    -- DAMAGE_TYPE_
+    -- EQUIP_TYPE_
+    -- ITEM_QUALITY_
+    -- ITEM_TRAIT_TYPE_
+    -- ITEMTYPE_
+    itemType = {}
+    -- WEAPONTYPE_
+}
+
 -- Container for slash commands
+-- @TODO move to own class
 LootomaticCommands = {}
 
 -- Used for logging output to console
+-- @TODO move to own class
 LootomaticLogger = {
     DEBUG = 100,
     INFO  = 200,
@@ -48,6 +71,7 @@ LootomaticLogger = {
 }
 
 --[[
+-- @TODO Move to util class
 -- @param mixed v
 -- @return boolean
 --]]
@@ -340,6 +364,8 @@ function Lootomatic.Command(parameters)
     end
 
     if options[1] == 'test' then
+        local panel = LootomaticGUI:CreateTopLevelWindow('lootomaticgui')
+        local a = LootomaticGUI:CreateControl('lootomatic_container', panel, CT_LABEL)
         local var1 = Ruler.Variable.New('Filter.itemType', 48)
         local var2 = Ruler.Variable.New('itemType')
         local o = Ruler.Operator.EqualTo.New(var1, var2)

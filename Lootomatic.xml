@@ -1,6 +1,25 @@
 <GuiXml>
     <Controls>
-        <TopLevelControl name="Lootomatic">
+        <TopLevelControl name="Lootomatic" mouseEnabled="true" movable="true" hidden="true">
+            <Dimensions x="700" y="540" />
+            <Controls>
+                <Label name="$(parent)MatchCounter" font="ZoFontGame" color="CFDCBD" wrapMode="ELLIPSIS" 
+				       verticalAlignment="CENTER" horizontalAlignment="LEFT" text="test" >
+					<Dimensions x="700" y="28" />
+                    <Anchor point="TOPLEFT" offsetX="50" offsetY="405" />
+
+                </Label>				
+                <Scroll />
+                <Backdrop name="$(parent)BG" inherits="ZO_ThinBackdrop"/>
+                <Button name="$(parent)CloseButton" font="ZoFontGame" color="CFDCBD" mouseEnabled="true" 
+                        verticalAlignment="CENTER" horizontalAlignment="CENTER" text="Close" inherits="ZO_DefaultButton">
+                    <Dimensions x="120" y="30" />
+                    <Anchor point="BOTTOMRIGHT" offsetY="-55" offsetX="-5"/>
+                    <OnMouseDown>
+                        LootomaticGUI:SetHidden(true)
+                    </OnMouseDown>
+                </Button>	
+            </Controls>
         </TopLevelControl>
     </Controls>
 </GuiXml>

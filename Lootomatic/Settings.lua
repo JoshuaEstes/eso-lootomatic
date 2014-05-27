@@ -50,9 +50,9 @@ end
 function Lootomatic_Settings:ToggleSetting(name)
     local s = self.db.config[name]
     if false == s then
-        s = true
+        self.db.config[name] = true
     else
-        s = false
+        self.db.config[name] = false
     end
 end
 
@@ -83,8 +83,12 @@ function Lootomatic_Settings:_AddSellJunkToggle()
         'Lootomatic_Settings_SellAllJunk',
         'Sell All Junk?',
         'When you open a vendor store, if enabled, this will sell all items marked as junk.',
-        self:GetSetting('sellAllJunk'),
-        self:ToggleSetting('sellAllJunk'),
+        function ()
+            return self:GetSetting('sellAllJunk')
+        end,
+        function ()
+            self:ToggleSetting('sellAllJunk')
+        end,
         true,
         'Setting this to enabled WILL SELL ALL ITEMS marked as junk when you open a vendors store.'
     )
@@ -103,7 +107,9 @@ function Lootomatic_Settings:_AddLoggerSlider()
         0,
         300,
         100,
-        self:GetSetting('logLevel'),
+        function ()
+            return self:GetSetting('logLevel')
+        end,
         function (level)
             self.db.config.logLevel = level
         end
